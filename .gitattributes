@@ -4,8 +4,10 @@
 # Patches must stay byte-exact, or `git am` fails on them.
 *.patch -text
 
-# Shell script: LF everywhere, or it won't run on macOS/Linux.
+# Shell script: LF everywhere, or it won't run on macOS/Linux. Checksum lists too, or `sha256sum -c` reads the
+# CR as part of each file name.
 gradlew text eol=lf
+SHA256SUMS.txt text eol=lf
 
 *.apk binary
 *.jar binary
