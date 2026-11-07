@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- The loopback connection to the TV's own debugging port (127.0.0.1:5555), and the camera overlay's RTSP stream
+         from the home recorder (the address typed on the setup screen). Nothing else uses it. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Back guard: put an app's task back in front after a stray Back release sent it away (normal permission). -->
+    <uses-permission android:name="android.permission.REORDER_TASKS" />
+
+    <uses-feature android:name="android.software.leanback" android:required="false" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+
+    <!-- Android 11+ hides other apps from this one unless it says which it opens: without this a mapping to an app
+         (YouTube, Prime Video) finds no launch intent and does nothing. Only apps with a TV or phone launcher entry. -->
+    <queries>
+        <!-- The TV settings app, whose service shows TCL's quick settings bar (the gear's quick_settings target). -->
+        <package android:name="com.android.tv.settings" />
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="false"
+        android:banner="@drawable/banner"
+        android:icon="@drawable/icon"
+        android:label="@string/app_name">
+
+        <!-- The camera login screen: the app's only screen, in the App Library (hidden from Home by the theme). -->
+        <activity
+            android:name=".CameraSetupActivity"
+            android:exported="true"
+            android:theme="@style/CameraSetupTheme"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Bound by Android at every boot once enabled. It asks for no key filtering (capabilities 0), so it never
+             sits in front of the remote's keys and held buttons keep auto-repeating. -->
+        <service
+            android:name=".ButtonService"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/button_service" />
+        </service>
+    </application>
+</manifest>

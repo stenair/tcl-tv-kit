@@ -1,0 +1,19 @@
+# Build output and machine-specific files (the ready-built APKs live in apks/)
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+__pycache__/
+
+# Never commit signing keys or ADB keys
+*.keystore
+*.jks
+adbkey
+adbkey.pub
+
+# Personal: backups, screenshots, notes and pushed mappings belong in the CleanYourTV folder (gitignored there)
+work/
+backup/
+shots/
+mappings.txt

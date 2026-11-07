@@ -1,0 +1,72 @@
+{
+  "dock_apps": [
+    "com.netflix.ninja",
+    "com.google.android.youtube.tv",
+    "com.stremio.one",
+    "ar.tvplayer.tv"
+  ],
+  "fill_dock": false,
+  "columns": 4,
+  "rows_below_dock": 1,
+  "half_grid": true,
+
+  "background_color": "#0B0D10",
+  "cinematic_home": true,
+  "cinematic_dots": false,
+  "cinematic_white_focus": true,
+  "dock_title": true,
+  "show_greeting": false,
+
+  "always_show_names": true,
+  "glass_style": "glass",
+  "focus_overshoot": false,
+  "advanced_effects": true,
+  "fade_rows": true,
+
+  "wallpaper": false,
+  "wallpaper_dim": 25,
+  "wallpaper_true_color": true,
+
+  "app_library": true,
+  "library_ok_opens": true,
+  "library_button": true,
+  "show_library_pill": false,
+  "hidden_apps": [
+    "au.com.kayosports.tv",
+    "au.net.abc.iview",
+    "com.abc.abcnews",
+    "com.android.tv.settings",
+    "com.android.vending",
+    "com.australiannewschannel.androidtv",
+    "com.beinsports.connect.tv.apac",
+    "com.crunchyroll.crunchyroid",
+    "com.dazn",
+    "com.disney.disneyplus",
+    "com.google.android.videos",
+    "com.sbs.ondemand.tv",
+    "com.tcl.browser",
+    "com.tcl.t_solo",
+    "local.tvbuttons"
+  ],
+
+  "app_labels": [
+    "com.tcl.tv=TCL Channel",
+    "com.tcl.suspension=PlayStation 5",
+    "com.tcl.dashboard=Cameras"
+  ],
+  "app_banners": [
+    "com.tcl.suspension=banner_console",
+    "com.tcl.dashboard=banner_cameras"
+  ],
+  "launch_actions": [
+    "com.tcl.suspension=input:com.tcl.tvinput/.TvPassThroughService/HW18",
+    "com.tcl.dashboard=input:com.tcl.tvinput/.TvPassThroughService/HW16",
+    "com.tcl.tv=input:com.tcl.channelplus/com.tcl.iptv.service.InputService"
+  ],
+  "live_tv_package": "com.tcl.tv",
+  "inputs_connected_only": true,
+
+  "wifi_status_color": true,
+  "wifi_status_warnings": true,
+  "clock_format": "system"
+}

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Square app icon: the same glyph as the banner. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FF2B3644" android:pathData="M0,0h24v24H0z" />
+    <group android:translateX="3" android:translateY="3" android:scaleX="0.75" android:scaleY="0.75">
+        <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd"
+            android:pathData="M3,7h10a2,2 0,0 1,2 2v1.6L21,7.5v9L15,13.4V15a2,2 0,0 1,-2 2H3a2,2 0,0 1,-2 -2V9a2,2 0,0 1,2 -2zM3.4,10a1.1,1.1 0,1 0,2.2 0a1.1,1.1 0,1 0,-2.2 0z" />
+    </group>
+</vector>

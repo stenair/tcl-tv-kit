@@ -1,0 +1,125 @@
+From d5214b91c629fad5089a0967c56df182507751a7 Mon Sep 17 00:00:00 2001
+From: Stefan Nair <stefan.nair97@gmail.com>
+Date: Thu, 5 Nov 2026 18:11:50 +0800
+Subject: [PATCH 1/2] Launcher: console and camera input banners, single-tile
+ Move (local TCL 75C755 setup)
+
+Local changes for one TV, not for upstream:
+- banner_console and banner_cameras: plain controller and video-camera
+  banners for input tiles mapped with app_banners (PS5 on HDMI 4,
+  camera system on HDMI 2). Solid fills to stay under the APK size gate.
+- A Move chosen from a tile's hold-OK menu now ends once the tile is
+  placed (OK or Back), with its own hint. Reorder apps from the Settings
+  menu keeps moving many tiles until Back again.
+
+APK 589,793 bytes (gate 589,824); testReleaseUnitTest: 314 passed.
+Tested on the TV: both banners show, the tile menu opens again after a
+single Move.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ .../main/java/com/gathin/tvhome/MainActivity.java   | 13 +++++++++++--
+ .../app/src/main/res/drawable/banner_cameras.xml    | 12 ++++++++++++
+ .../app/src/main/res/drawable/banner_console.xml    | 12 ++++++++++++
+ launcher/app/src/main/res/values/strings.xml        |  2 ++
+ 4 files changed, 37 insertions(+), 2 deletions(-)
+ create mode 100644 launcher/app/src/main/res/drawable/banner_cameras.xml
+ create mode 100644 launcher/app/src/main/res/drawable/banner_console.xml
+
+diff --git a/launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java b/launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java
+index 870ca516..d22503d7 100644
+--- a/launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java
++++ b/launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java
+@@ -330,6 +330,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+     private PopupWindow openPopup;
+     /** Reorder mode is on (top-bar button). */
+     private boolean reordering;
++    // Local change (TCL 75C755 setup): a Move chosen from a tile's menu moves that one tile, so placing it (OK or
++    // Back) ends the mode. Reorder apps from the Settings menu still moves many tiles until Back again.
++    private boolean singleMove;
+     /** Key of the tile being carried in reorder mode, or null. */
+     private String movingKey;
+     /** Tile order when reorder mode started, to save only when something moved. */
+@@ -1625,10 +1628,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+         dimOthers();
+     }
+ 
+-    /** Puts the carried tile down where it is; the mode stays on. */
++    /** Puts the carried tile down where it is; the mode stays on, unless it was a single Move from the tile menu. */
+     private void drop() {
+         movingKey = null;
+         dimOthers();
++        if (singleMove) {
++            singleMove = false;   // cleared first: endReorder() calls drop() again
++            endReorder();
++        }
+     }
+ 
+     /** While a tile is carried, every other tile is dimmed so the carried one stands out; otherwise all are full. */
+@@ -1651,6 +1658,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+     /** Ends the mode and saves the order if it changed since the mode started. */
+     private void endReorder() {
+         if (!reordering) return;
++        singleMove = false;
+         dockEditing = false;
+         dockEditSlot = -1;
+         dockEditAppKey = null;
+@@ -3833,7 +3841,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+             if (at < 0) return;
+             focusTile(at);
+             pickUp(at);
+-            Toast.makeText(this, R.string.reorder_hint, Toast.LENGTH_LONG).show();
++            singleMove = true;
++            Toast.makeText(this, R.string.move_one_hint, Toast.LENGTH_LONG).show();
+         });
+         if (appLibraryEnabled) addSettingsMenuRow(rows, popup, R.string.library_remove_shortcut, () -> {
+             if (LibraryApps.save(this, pkg, false)) reloadApps(false);
+diff --git a/launcher/app/src/main/res/drawable/banner_cameras.xml b/launcher/app/src/main/res/drawable/banner_cameras.xml
+new file mode 100644
+index 00000000..4f5ce990
+--- /dev/null
++++ b/launcher/app/src/main/res/drawable/banner_cameras.xml
+@@ -0,0 +1,12 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Local addition (TCL 75C755 setup): banner for a security-camera input tile (theme app_banners): a dark slate
++     field with a plain video-camera glyph, its recording light cut out. -->
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="320dp" android:height="180dp"
++    android:viewportWidth="320" android:viewportHeight="180">
++    <path android:fillColor="#FF2B3644" android:pathData="M0,0h320v180H0z" />
++    <group android:translateX="118" android:translateY="48" android:scaleX="3.5" android:scaleY="3.5">
++        <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd"
++            android:pathData="M3,7h10a2,2 0,0 1,2 2v1.6L21,7.5v9L15,13.4V15a2,2 0,0 1,-2 2H3a2,2 0,0 1,-2 -2V9a2,2 0,0 1,2 -2zM3.4,10a1.1,1.1 0,1 0,2.2 0a1.1,1.1 0,1 0,-2.2 0z" />
++    </group>
++</vector>
+diff --git a/launcher/app/src/main/res/drawable/banner_console.xml b/launcher/app/src/main/res/drawable/banner_console.xml
+new file mode 100644
+index 00000000..44e47f55
+--- /dev/null
++++ b/launcher/app/src/main/res/drawable/banner_console.xml
+@@ -0,0 +1,12 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Local addition (TCL 75C755 setup): banner for a game-console input tile (theme app_banners): a deep blue
++     field with a plain controller glyph drawn here (no brand mark), d-pad and buttons cut out. -->
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="320dp" android:height="180dp"
++    android:viewportWidth="320" android:viewportHeight="180">
++    <path android:fillColor="#FF14389C" android:pathData="M0,0h320v180H0z" />
++    <group android:translateX="114" android:translateY="44" android:scaleX="3.8333" android:scaleY="3.8333">
++        <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd"
++            android:pathData="M7,6h10a5,5 0,0 1,4.9 4l1,5a3,3 0,0 1,-5.2 2.6L16,15H8l-1.7,2.6A3,3 0,0 1,1.1 15l1,-5A5,5 0,0 1,7 6zM5.75,8.5h1.5v1.25h1.25v1.5h-1.25v1.25h-1.5v-1.25H4.5v-1.5h1.25zM15.25,11.25a1,1 0,1 0,2 0a1,1 0,1 0,-2 0zM17.25,9.25a1,1 0,1 0,2 0a1,1 0,1 0,-2 0z" />
++    </group>
++</vector>
+diff --git a/launcher/app/src/main/res/values/strings.xml b/launcher/app/src/main/res/values/strings.xml
+index 2b2b53eb..6db33a8e 100644
+--- a/launcher/app/src/main/res/values/strings.xml
++++ b/launcher/app/src/main/res/values/strings.xml
+@@ -107,6 +107,8 @@
+     <string name="reorder">Reorder apps</string>
+     <string name="tile_move">Move</string>
+     <string name="reorder_hint">OK picks up an app, arrows move it, Back places it. Back again to finish.</string>
++    <!-- Local change (TCL 75C755 setup): hint for a single Move from a tile's menu. English only. -->
++    <string name="move_one_hint" translatable="false">Arrows move it, OK places it.</string>
+     <string name="reorder_not_saved">Couldn\'t save the new order</string>
+     <string name="app_library">App library</string>
+     <string name="library_empty">No launchable apps found</string>

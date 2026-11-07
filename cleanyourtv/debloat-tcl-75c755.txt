@@ -1,0 +1,86 @@
+# Debloat list: TCL 75C755 QD-Mini LED, Google TV 14 (device G08, MediaTek tcl9618,
+# firmware tcl9618-user 14 UTT2.250416.001 AU02), as applied on 2026-11-05. Australian apps.
+# Based on CleanYourTV's examples/tcl-c755-google-tv/debloat.txt (verified on two C755s with this firmware),
+# adjusted for this household: see the kit's docs/03-debloat.md for every decision.
+#
+# Every line is DISABLED for user 0, never uninstalled. "#" in front of a line keeps that package ON.
+# Copy this file to CleanYourTV\work\<your tv>\debloat.txt and KEEP IT THERE: the undo record is keyed to its path.
+#
+# Apply (PowerShell, from the CleanYourTV folder):
+#   powershell -ExecutionPolicy Bypass -File tools\disable.ps1 -TvHost $env:TV_HOST work\<your tv>\debloat.txt
+# Undo everything (back to the original state, Google TV's home included):
+#   powershell -ExecutionPolicy Bypass -File tools\restore.ps1 -TvHost $env:TV_HOST work\<your tv>\debloat.txt -Stock com.google.android.apps.tv.launcherx
+# Undo one package:  tools\venv\Scripts\python.exe -I tools\tv.py "pm enable <package>"
+# After a firmware update:  tools\venv\Scripts\python.exe -I tools\check.py work\<your tv>\debloat.txt
+#
+# KEPT ON by choice (ask your household; these are ours):
+#   com.google.android.apps.mediashell      Chromecast (we cast from phones)
+#   com.google.android.katniss              Google Assistant / Gemini on the mic button
+#   com.google.android.tv.remote.service    also carries the Bluetooth remote's mic: never disable
+#   com.tcl.gamebar                         game mode / VRR overlay (PS5)
+#   com.tcl.channelplus                     TCL Channel free live channels (it is also their TV input)
+#   com.tcl.interactive                     TCL's HbbTV engine: disabling it makes the TV app retry it 10x a second
+#                                           forever (see below); kept on
+#   Netflix, Prime Video, YouTube, and every app you installed
+# KEPT ON because the TV needs them: com.tcl.tv (the only HDMI player!), com.tcl.tvinput (HDMI inputs),
+#   com.tcl.dashboard and com.tcl.suspension (the Input button's source panel; also reused as the Cameras and PS5
+#   tiles), com.tcl.autopair, com.tcl.systemserver, com.tcl.providers.config, com.tcl.initsetup,
+#   com.tcl.useragreement, com.tcl.globalkeyoverlay, com.tcl.systemui.plugin, com.tcl.factory.view,
+#   com.tcl.inputmethod.international (keyboard), com.tcl.eva, com.tcl.hearaid, com.tcl.t_solo, tv.mopa.ginga,
+#   com.tcl.android.webview, all com.mediatek.* except AirPlay, com.dolby.*, Play Store and Play Services.
+#
+# Firmware updates: TV Settings' System update screen is Google Play Services
+# (com.google.android.gms/.update.SystemUpdatePanoActivity), which stays on. com.tcl.ttvs also carries TCL's own
+# update service; to use that path: tv.py "pm enable com.tcl.ttvs", check for updates, then apply this list again.
+#
+# Apply in batches (remove the batches you haven't reached yet, or apply the whole file and check after each
+# batch's packages show "disabled-user"), with a screenshot and a quick look between batches.
+
+# --- Batch 1: TCL ads, promos, home-screen pushes, store/hotel demo -----------------------------------------
+com.tcl.tv.tclhome_passive             # pushes TCL content to the home screen at boot
+com.tcl.partnercustomizer              # TCL tweaks to Google TV home rows
+com.tcl.messagebox                     # TCL push messages and promos
+com.tcl.waterfall.overseas             # TCL movie/show recommendation browser (the TCL button opened it)
+com.tcl.exhibit                        # retail demo mode
+com.tcl.esticker                       # retail demo stickers
+com.tcl.hotelmenu                      # hotel mode
+android.autoinstalls.config.google.gtvpai   # silently installs partner apps
+com.google.android.partnersetup        # partner attribution
+
+# --- Batch 2: tracking, logging, analytics, feedback --------------------------------------------------------
+com.tcl.logkit                         # log capture and upload
+com.tcl.usercenter                     # TCL account sign-in nags
+# com.tcl.interactive                  # KEEP ON. TCL's HbbTV/"Tbrowser" server. Disabled, com.tcl.tv retries it 10x a
+                                       # second forever (~1.2% of a core, ~150 log lines/s). On, it starts only when TCL
+                                       # Channel or an input opens: ~0.2% of a core, ~20 MB, one call to api.leiniao.com.
+com.google.android.feedback
+com.android.tv.feedbackconsent
+
+# --- Batch 3: preloads and features not used here (check with your household) ------------------------------
+au.com.stan.and                        # Stan (Australia; its remote button gets remapped in step 6)
+com.google.android.youtube.tvmusic     # YouTube Music (regular YouTube stays)
+com.google.android.play.games          # Play Games
+com.tcl.ocean.instructions             # e-manual
+com.tcl.repairguide
+com.tcl.guard                          # TCL "cleaner" / app manager
+com.tcl.UpdatePeripheral               # TCL soundbar firmware updates (keep it if you have a TCL soundbar)
+com.tcl.ui_mediaCenter                 # USB media player (keep it if you play files from USB sticks)
+com.tcl.gallery                        # USB photo gallery + TCL photo screensaver
+
+# --- Batch 4: casting and mirroring not used (Chromecast stays) ---------------------------------------------
+com.tcl.airplay2                       # AirPlay, together with the next two lines
+com.mediatek.AirplayAPK
+com.mediatek.airplaydaemon
+com.tcl.miracast                       # Miracast screen mirroring
+com.tcl.magiconnectfree                # TCL T-Cast / Magiconnect phone mirroring
+
+# --- Batch 5: the big one; test TCL Channel (and Alexa, if you use it) afterwards ---------------------------
+com.tcl.ttvs                           # Samba TV ACR viewing tracking, TCL "BI" analytics, Alexa core, T-Cast, TCL's own updater
+com.tcl.smartalexa                     # "Works with Alexa": Echo commands fail ("TV isn't responding") once ttvs is off, so it
+                                       # goes too. To keep Alexa, keep BOTH ttvs and smartalexa (Samba TV tracking stays with ttvs).
+
+# --- Batch 6: ONLY in step 5 (Home takeover), after the new launcher is installed and tested --------------------
+# Switch the screensaver to the launcher's clock first; check setupwraith's Wi-Fi ownership first (docs/05).
+# com.google.android.apps.tv.dreamx      # Google's ambient screensaver (promos)
+# com.google.android.tungsten.setupwraith  # the setup wizard: claims Home once Google TV's home is off
+# (Google TV's home, launcherx, is disabled by launcher\build-and-install.ps1, never from this list)

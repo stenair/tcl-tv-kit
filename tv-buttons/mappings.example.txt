@@ -1,0 +1,46 @@
+# TV Buttons mappings: copy this file to mappings.txt, edit it for YOUR TV, then push it:
+#
+#   tools\venv\Scripts\python.exe -I tools\tv.py --push mappings.txt /sdcard/Android/data/local.tvbuttons/files/mappings.txt
+#
+# (run from the CleanYourTV folder, TV_HOST set; in Git Bash prefix MSYS_NO_PATHCONV=1). TV Buttons notices the new
+# file at the next button press: no rebuild, no restart. When this file is on the TV it REPLACES the built-in list
+# completely, so keep every line you want. Delete the file to go back to the built-in list:
+#
+#   tools\venv\Scripts\python.exe -I tools\tv.py "rm /sdcard/Android/data/local.tvbuttons/files/mappings.txt"
+#
+# Format: one  <keyCode>=<target>  per line. '#' starts a comment. The keyCode is what TCL's window manager logs for
+# the button: a number for TCL's app buttons (4141), a KEYCODE_ name for standard ones (KEYCODE_PROG_RED). Read your
+# remote's codes with:  tools\venv\Scripts\python.exe -I ..\tcl-tv-kit\tools\record_keys.py   (see docs/06).
+#
+# Targets:
+#   input:<tv input id>      switch to an input. IDs: dumpsys tv_input. On the 75C755: HW15 = HDMI 1, HW16 = HDMI 2,
+#                            HW17 = HDMI 3, HW18 = HDMI 4; TCL Channel = com.tcl.channelplus/com.tcl.iptv.service.InputService
+#   <package>                open that app (com.netflix.ninja)
+#   settings                 open TV settings
+#   quick_settings           TCL's own quick settings bar (the gear); falls back to TV settings
+#   camera:<n>               camera overlay: toggle a live picture of recorder channel n
+#   camera:<n>,<n>,...       camera overlay: each press shows the next channel; the press after the last closes
+#
+# ---- The 75C755 set-up this kit was built on (= the built-in list) --------------------------------------------
+4141=input:com.tcl.tvinput/.TvPassThroughService/HW18          # Disney+ button -> PlayStation 5 on HDMI 4
+4136=input:com.tcl.tvinput/.TvPassThroughService/HW16          # Stan button    -> camera recorder on HDMI 2
+KEYCODE_BUTTON_3=com.google.android.youtube.tv                 # YouTube button (Google TV's home handled it)
+4099=com.amazon.amazonvideo.livingroom                         # Prime Video button (same)
+KEYCODE_NOTIFICATION=quick_settings                            # gear -> TCL's quick settings bar
+4020=input:com.tcl.channelplus/com.tcl.iptv.service.InputService  # TCL button -> TCL Channel
+4062=com.netflix.ninja                                         # Netflix button (TCL sent it to the disabled ttvs)
+KEYCODE_PROG_YELLOW=camera:1                                   # yellow -> camera 1
+KEYCODE_PROG_BLUE=camera:2                                     # blue   -> camera 2
+
+# ---- More cameras: examples (uncomment / adapt) -----------------------------------------------------------------
+# Four cameras, one colour button each (the four colour buttons are free on a TV with no antenna):
+#   KEYCODE_PROG_RED=camera:1
+#   KEYCODE_PROG_GREEN=camera:2
+#   KEYCODE_PROG_YELLOW=camera:3
+#   KEYCODE_PROG_BLUE=camera:4
+# Eight cameras on two buttons: yellow steps 1 -> 2 -> 3 -> 4 -> closed, blue steps 5 -> 6 -> 7 -> 8 -> closed:
+#   KEYCODE_PROG_YELLOW=camera:1,2,3,4
+#   KEYCODE_PROG_BLUE=camera:5,6,7,8
+# One button for every camera (1 -> 2 -> ... -> 6 -> closed):
+#   KEYCODE_PROG_BLUE=camera:1,2,3,4,5,6
+# The setup screen (App Library -> TV Buttons) then shows a name field and a Try button for every channel used.

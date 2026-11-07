@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No accessibilityFlags: in particular no flagRequestFilterKeyEvents, so the firmware keeps auto-repeating held
+     keys (on this TCL any key-filtering service turns the volume ramp into single steps). The service only needs to
+     be bound; it reads no windows and handles no events. -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeAnnouncement"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:notificationTimeout="0"
+    android:canRetrieveWindowContent="false"
+    android:description="@string/service_description" />

@@ -1,0 +1,374 @@
+From c602cce04cebcdb0f26da6f96bbb459d28dbe3ff Mon Sep 17 00:00:00 2001
+From: Stefan Nair <stefan.nair97@gmail.com>
+Date: Thu, 5 Nov 2026 20:21:24 +0800
+Subject: [PATCH 2/2] Launcher: half_grid one-row layout with outlined free
+ slots (local TCL 75C755 setup)
+
+Local change for one TV, not for upstream:
+- half_grid (theme key, off by default): rows under the dock hold
+  2 x columns tiles at about half size, so the dock plus all seven
+  other apps fit the first screen. Dock tiles span two grid columns.
+  A third view type sizes the half tiles (11sp names).
+- Up/Down/Left/Right, the reorder mode, Down from the top bar and Up
+  from the library use dock-aware row maths (rowStart/above/below/
+  dockColumn); without half_grid they reduce to the old arithmetic.
+- HalfGridSlots draws a faint dashed outline in each free slot of the
+  last half row (drawn only, never focusable).
+
+APK 590,965 bytes, 1,141 over the 589,824 gate (accepted for this
+personal build). testReleaseUnitTest: 314 passed. Tested on the TV:
+20/20 D-pad moves, reorder within the half row and dock <-> half row.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ .../java/com/gathin/tvhome/AppAdapter.java    | 18 ++++-
+ .../main/java/com/gathin/tvhome/Config.java   |  9 ++-
+ .../java/com/gathin/tvhome/HalfGridSlots.java | 60 +++++++++++++++
+ .../java/com/gathin/tvhome/MainActivity.java  | 75 +++++++++++++++----
+ launcher/app/src/main/res/values/config.xml   |  3 +
+ 5 files changed, 150 insertions(+), 15 deletions(-)
+ create mode 100644 launcher/app/src/main/java/com/gathin/tvhome/HalfGridSlots.java
+
+diff --git a/launcher/app/src/main/java/com/gathin/tvhome/AppAdapter.java b/launcher/app/src/main/java/com/gathin/tvhome/AppAdapter.java
+index 555fd4c6..d423c1ff 100644
+--- a/launcher/app/src/main/java/com/gathin/tvhome/AppAdapter.java
++++ b/launcher/app/src/main/java/com/gathin/tvhome/AppAdapter.java
+@@ -113,6 +113,11 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+         return Math.max(Math.round(80 * density), Math.min(design, fit));
+     }
+ 
++    /** half_grid: a tile under the dock is half a dock tile, or less where the doubled columns leave less room. */
++    static int halfTileWidthPx(int innerWidthPx, int dockTileWidthPx, int columns, float density) {
++        return Math.min(dockTileWidthPx / 2, tileWidthPx(innerWidthPx, 2 * columns, density));
++    }
++
+     static int tileHeightPx(int tileWidthPx) {
+         return Math.round(tileWidthPx * DESIGN_H_DP / DESIGN_W_DP);
+     }
+@@ -218,6 +223,9 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+     private final Map<String, String> appLabels, appBanners;
+     /** Every app tile is its icon on a card tinted from that icon, never its banner (config.xml, uniform_tiles). */
+     private final boolean uniformTiles;
++    /** Local change (TCL 75C755 setup), half_grid: tiles after the dock are a third view type, about half size. */
++    private final boolean halfGrid;
++    static final int TYPE_HALF = 2;
+     /** Packages drawn from their icon and name even when they have a banner (config.xml icon_tiles). */
+     private final Set<String> iconTiles;
+     private final List<Entry> items = new ArrayList<>();
+@@ -248,6 +256,7 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+         this.appLabels = cfg.appLabels;
+         this.appBanners = cfg.appBanners;
+         this.uniformTiles = cfg.uniformTiles;
++        this.halfGrid = cfg.halfGrid;
+         // Tiles keep their identity across reload(), so a focused tile stays on its app instead of
+         // its view being rebound to whatever app now sits in that slot.
+         setHasStableIds(true);
+@@ -416,6 +425,11 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+         int width = parent.getWidth() > 0 ? parent.getWidth() : parent.getMeasuredWidth();
+         int inner = width - parent.getPaddingLeft() - parent.getPaddingRight();
+         int w = tileWidthPx(inner, parent.getHeight(), dockSize, rowsBelowDock, dockTitle, dockRow, density), h = tileHeightPx(w);
++        if (viewType == TYPE_HALF) {
++            w = halfTileWidthPx(inner, w, dockSize, density);
++            h = tileHeightPx(w);
++            ((TextView) v.findViewById(R.id.name)).setTextSize(11f);   // sp; "PlayStation 5" fits a half tile
++        }
+         View card = v.findViewById(R.id.card);
+         ViewGroup.LayoutParams cardLp = card.getLayoutParams();
+         cardLp.width = w;
+@@ -571,7 +585,9 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+ 
+     boolean isLibraryAt(int position) { return showLibrary && position == items.size(); }
+ 
+-    @Override public int getItemViewType(int position) { return isLibraryAt(position) ? 1 : 0; }
++    @Override public int getItemViewType(int position) {
++        return isLibraryAt(position) ? 1 : halfGrid && position >= dockSize ? TYPE_HALF : 0;
++    }
+ 
+     boolean containsPackage(String pkg) {
+         for (Entry entry : items) if (entry.pkg.equals(pkg)) return true;
+diff --git a/launcher/app/src/main/java/com/gathin/tvhome/Config.java b/launcher/app/src/main/java/com/gathin/tvhome/Config.java
+index feb5a816..0f88dd34 100644
+--- a/launcher/app/src/main/java/com/gathin/tvhome/Config.java
++++ b/launcher/app/src/main/java/com/gathin/tvhome/Config.java
+@@ -122,6 +122,9 @@ final class Config {
+     final boolean launcherSettingsButton;
+     /** Names under every tile, dimmed until focused (config.xml always_show_names); the dock band grows for them. */
+     final boolean alwaysShowNames;
++    /** Local change (TCL 75C755 setup), config.xml half_grid: the rows under the dock hold twice as many tiles at
++     *  about half the size, so more apps fit on the first screen. Only with the dock as its own row, not single_row. */
++    boolean halfGrid;
+     /** Reorder button in the top bar (config.xml reorder_button); the Settings long-press menu offers it either way. */
+     final boolean reorderButton;
+     /** Show the Wi-Fi/Ethernet pill in the top bar (config.xml, show_network_pill). */
+@@ -479,6 +482,7 @@ final class Config {
+         boolean showLibraryPill = res.getBoolean(R.bool.show_library_pill);
+         int wifiLabelWidth = res.getInteger(R.integer.wifi_label_width);
+         boolean alwaysShowNames = res.getBoolean(R.bool.always_show_names);
++        boolean halfGrid = res.getBoolean(R.bool.half_grid);
+         boolean wallpaperTrueColor = res.getBoolean(R.bool.wallpaper_true_color);
+         boolean focusOvershoot = res.getBoolean(R.bool.focus_overshoot);
+         boolean wallpaperCaptions = res.getBoolean(R.bool.wallpaper_captions);
+@@ -593,6 +597,7 @@ final class Config {
+             showLibraryPill = bool(json, "show_library_pill", showLibraryPill);
+             wifiLabelWidth = integer(json, "wifi_label_width", wifiLabelWidth, 0, 300);
+             alwaysShowNames = bool(json, "always_show_names", alwaysShowNames);
++            halfGrid = bool(json, "half_grid", halfGrid);
+             wallpaperTrueColor = bool(json, "wallpaper_true_color", wallpaperTrueColor);
+             focusOvershoot = bool(json, "focus_overshoot", focusOvershoot);
+             wallpaperCaptions = bool(json, "wallpaper_captions", wallpaperCaptions);
+@@ -701,7 +706,7 @@ final class Config {
+         Festival festival = json == null ? Festival.NONE : Festival.parse(festivalName(json),
+                 string(json, "festival_until", ""), string(json, "greeting", ""), string(json, "accent_color", ""));
+ 
+-        return new Config(dock, fillDock, hidden, libraryApps, libraryExcludedApps, liveTv, liveTvAction, liveTvInputId, packageMap(launchActions), packageMap(appLabels),
++        Config built = new Config(dock, fillDock, hidden, libraryApps, libraryExcludedApps, liveTv, liveTvAction, liveTvInputId, packageMap(launchActions), packageMap(appLabels),
+                 packageMap(appBanners), panelService, panelAction, panelExtra, coocaaSources, inputAction, inputSources, inputUriScheme, Math.max(1, columns),
+                 Math.max(0, rowsBelow), animations, advancedEffects, shamsi, greetingName, moduleCards, reducedMotion, bootToLiveTv,
+                 openOnStartChoice, dockTitle, dockRow, topMenu, launcherSettingsButton, reorderButton, showNetworkPill, showInputsPill,
+@@ -716,6 +721,8 @@ final class Config {
+                 Math.max(0, Math.min(90, clockWallpaperDim)), clockGlow, glassStyle, singleRow && dockRow, dockBandAll, lunar, lunarOffset,
+                 dateBelowClock, vpnPill, locale, powerOnHomeAlways, inputsConnectedOnly, inputsCecStateOnly,
+                 Math.max(0, Math.min(600, openOnStartNetworkWait)), openOnStartOnWake, iconOnlyVpn, clockFormat, backOpensClock, glowSnap);
++        built.halfGrid = halfGrid && dockRow && !singleRow;
++        return built;
+     }
+ 
+     /**
+diff --git a/launcher/app/src/main/java/com/gathin/tvhome/HalfGridSlots.java b/launcher/app/src/main/java/com/gathin/tvhome/HalfGridSlots.java
+new file mode 100644
+index 00000000..7e79d441
+--- /dev/null
++++ b/launcher/app/src/main/java/com/gathin/tvhome/HalfGridSlots.java
+@@ -0,0 +1,60 @@
++package com.gathin.tvhome;
++
++import android.graphics.Canvas;
++import android.graphics.DashPathEffect;
++import android.graphics.Paint;
++import android.graphics.RectF;
++import android.view.View;
++
++import androidx.annotation.NonNull;
++import androidx.recyclerview.widget.RecyclerView;
++
++/**
++ * Local change (TCL 75C755 setup), half_grid: a faint dashed outline in each free slot of the last half-size row, so
++ * the row reads as evenly spread and shows there is room for another app. Only drawn: it is no tile and takes no
++ * focus, so navigation and the saved order never see it. A full last row draws nothing.
++ */
++final class HalfGridSlots extends RecyclerView.ItemDecoration {
++    private final int dockSize, rowLength;
++    private final boolean rtl;
++    private final float density;
++    private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
++    private final RectF rect = new RectF();
++
++    HalfGridSlots(int dockSize, boolean rtl, float density) {
++        this.dockSize = dockSize;
++        this.rowLength = 2 * dockSize;
++        this.rtl = rtl;
++        this.density = density;
++        paint.setStyle(Paint.Style.STROKE);
++        paint.setStrokeWidth(1.5f * density);
++        paint.setColor(0x4DFFFFFF);   // white at 30%
++        paint.setPathEffect(new DashPathEffect(new float[] {6 * density, 5 * density}, 0));
++    }
++
++    @Override
++    public void onDraw(@NonNull Canvas c, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
++        if (!(parent.getAdapter() instanceof AppAdapter)) return;
++        int count = ((AppAdapter) parent.getAdapter()).appCount();
++        if (count <= dockSize) return;
++        int used = (count - dockSize) % rowLength;
++        if (used == 0) return;
++        // The last tile places the outlines: the same size, one grid cell further on for each free slot.
++        View last = null;
++        for (int i = 0; i < parent.getChildCount() && last == null; i++) {
++            View child = parent.getChildAt(i);
++            if (parent.getChildAdapterPosition(child) == count - 1) last = child;
++        }
++        View card = last == null ? null : last.findViewById(R.id.card);
++        if (card == null) return;   // the last row is scrolled off: nothing to line up with
++        float step = (parent.getWidth() - parent.getPaddingLeft() - parent.getPaddingRight()) / (float) rowLength;
++        if (rtl) step = -step;
++        float left = last.getLeft() + card.getLeft(), top = last.getTop() + card.getTop();
++        float radius = AppAdapter.cornerRadius(card.getWidth(), density), inset = paint.getStrokeWidth() / 2;
++        for (int k = 1; k <= rowLength - used; k++) {
++            float x = left + k * step;
++            rect.set(x + inset, top + inset, x + card.getWidth() - inset, top + card.getHeight() - inset);
++            c.drawRoundRect(rect, radius, radius, paint);
++        }
++    }
++}
+diff --git a/launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java b/launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java
+index d22503d7..f7dae25f 100644
+--- a/launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java
++++ b/launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java
+@@ -261,6 +261,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+     private boolean dockRow;
+     /** config single_row: every app in the dock's row, scrolling sideways, no grid below. */
+     private boolean singleRow;
++    // Local change (TCL 75C755 setup), half_grid: rows under the dock are 2 * COLUMNS half-size tiles, the dock tiles
++    // span two grid columns each. Row maths for either layout goes through rowStart, above and below.
++    private boolean halfGrid;
+     /** The highlight springs past its target (config.xml, focus_overshoot); false goes straight there. */
+     private boolean focusOvershoot;
+     /** Festive skin from the theme (see Festival); applied while it is active today. */
+@@ -480,6 +483,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+         reducedMotion = cfg.reducedMotion;
+         dockRow = cfg.dockRow;
+         singleRow = cfg.singleRow;
++        halfGrid = cfg.halfGrid;
+         focusOvershoot = cfg.focusOvershoot;
+         festival = cfg.festival;
+         festive = festival.active(LocalDate.now());
+@@ -615,7 +619,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+         rtlAppGrid = getResources().getBoolean(R.bool.rtl_app_grid);
+         // Mirror only the app grid; the header and other locales keep their own layouts.
+         // single_row: one span laid out sideways, so the same adapter, glass and dock band serve a scrolling row.
+-        grid.setLayoutManager(new GridLayoutManager(this, singleRow ? 1 : COLUMNS,
++        grid.setLayoutManager(new GridLayoutManager(this, singleRow ? 1 : halfGrid ? 2 * COLUMNS : COLUMNS,
+                 singleRow ? RecyclerView.HORIZONTAL : RecyclerView.VERTICAL, false) {
+             @Override
+             protected boolean isLayoutRTL() {
+@@ -668,7 +672,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+             }
+         });
+         ((GridLayoutManager) grid.getLayoutManager()).setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+-            @Override public int getSpanSize(int position) { return !singleRow && adapter != null && adapter.isLibraryAt(position) ? COLUMNS : 1; }
++            @Override public int getSpanSize(int position) {
++                if (singleRow) return 1;
++                if (adapter != null && adapter.isLibraryAt(position)) return halfGrid ? 2 * COLUMNS : COLUMNS;
++                return halfGrid && position < COLUMNS ? 2 : 1;
++            }
+         });
+         grid.setHasFixedSize(true);
+         grid.setItemAnimator(null);
+@@ -686,6 +694,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+         });
+         if (dockRow) grid.addItemDecoration(new DockDecoration(COLUMNS, density, cinematic, cfg.alwaysShowNames, cfg.dockOpacity, cfg.dockGlass, cfg.dockEvenPadding, cfg.dockBand,
+                 singleRow, cfg.dockBandAll));
++        if (halfGrid) grid.addItemDecoration(new HalfGridSlots(COLUMNS, rtlAppGrid, density));
+         if (cfg.fadeRows) TopFade.attach(grid, 48 * density);
+         // Reduced motion: the tiles are simply there, with no entrance (reloadApps skips it there too).
+         if (animations && !reducedMotion) {
+@@ -709,7 +718,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+             int tileW = AppAdapter.tileWidthPx(inner, h, COLUMNS, rowsBelowDock, cfg.dockTitle, cfg.dockRow, density);
+             int itemH = AppAdapter.itemHeightPx(AppAdapter.tileHeightPx(tileW), density);
+             int dockRow = itemH + (int) (AppAdapter.DOCK_EXTRA_DP * density);   // item height plus DockDecoration offsets
+-            int gridRows = itemH * rowsBelowDock;
++            int rowH = halfGrid ? AppAdapter.itemHeightPx(AppAdapter.tileHeightPx(
++                    AppAdapter.halfTileWidthPx(inner, tileW, COLUMNS, density)), density) : itemH;
++            int gridRows = rowH * rowsBelowDock;
+             // Keep the hero below the header when the library is enabled on a short screen,
+             // even when the theme requests an extra visible row below the dock.
+             int shelfClearance = cfg.appLibrary ? hero.getMeasuredHeight() + (int) (40 * density) : 0;
+@@ -901,7 +912,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+             if (keyCode == KeyEvent.KEYCODE_DPAD_UP) return true;
+             if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+                 // Back to the dock tile Up came from, not wherever the focus finder lands.
+-                focusTile(singleRow ? lastFocused : lastFocused % COLUMNS);
++                focusTile(singleRow ? lastFocused : dockColumn(lastFocused));
+                 return true;
+             }
+             int firstButton = btnInputs.getVisibility() == View.VISIBLE ? R.id.btnInputs : firstTopButton().getId();
+@@ -1706,9 +1717,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+         // rtl_app_grid (Hebrew) mirrors the grid: position 0 is on the right, so Left moves towards the end.
+         if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) to = rtlAppGrid ? from + 1 : from - 1;
+         else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) to = rtlAppGrid ? from - 1 : from + 1;
+-        else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) to = from - COLUMNS;
+-        else if (from + COLUMNS < n) to = from + COLUMNS;
+-        else to = from / COLUMNS < (n - 1) / COLUMNS ? n - 1 : from;
++        else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) to = above(from);
++        else if (below(from) < n) to = below(from);
++        else to = rowStart(from) < rowStart(n - 1) ? n - 1 : from;
+         if (to < 0 || to >= n || to == from) return;
+         keepScroll(() -> adapter.move(from, to));
+         // The owner carries this tile: where it lands decides whether it is in the dock, not dock_apps (#499).
+@@ -2453,19 +2464,25 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+             }
+             // In the dock, the last app is the row's end: the empty slots after it take no focus.
+             int rowCount = position < COLUMNS ? Math.min(count, adapter.dockFilled()) : count;
++            if (halfGrid && position >= COLUMNS) {
++                // The half-size rows are 2 * COLUMNS long and start after the dock.
++                return GridNavigation.atHorizontalEdge(position - COLUMNS, count - COLUMNS, 2 * COLUMNS,
++                        rtlAppGrid, keyCode == KeyEvent.KEYCODE_DPAD_LEFT);
++            }
+             return GridNavigation.atHorizontalEdge(position, rowCount, COLUMNS,
+                     rtlAppGrid, keyCode == KeyEvent.KEYCODE_DPAD_LEFT);
+         }
+         if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+             if (position < COLUMNS) return false;          // dock row: let focus move to the top bar
+-            target = position - COLUMNS;
++            target = above(position);
++            // Up from a half tile into the dock: the dock's empty slots take no focus.
++            if (halfGrid && target < COLUMNS) target = adapter.focusablePosition(target);
+         } else {
+-            int lastRowStart = ((count - 1) / COLUMNS) * COLUMNS;
+-            if (position >= lastRowStart) {
++            if (rowStart(position) == rowStart(count - 1)) {
+                 if (adapter.isLibraryAt(count)) focusLibrary();
+                 return true;
+             }
+-            target = Math.min(position + COLUMNS, count - 1);
++            target = Math.min(below(position), count - 1);
+         }
+         focusTile(target);
+         // The default focus search clicks for Left/Right; Up/Down are handled here, so click for them too.
+@@ -2612,8 +2629,40 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+ 
+     @Override public void onLibraryUp() {
+         if (adapter.appCount() == 0) { firstTopButton().requestFocus(); return; }
+-        int lastRow = ((adapter.appCount() - 1) / COLUMNS) * COLUMNS;
+-        focusTile(Math.min(lastRow + lastFocused % COLUMNS, adapter.appCount() - 1));
++        int last = adapter.appCount() - 1;
++        int lastRow = rowStart(last);
++        int column = halfGrid && lastRow >= COLUMNS
++                ? (lastFocused >= COLUMNS ? (lastFocused - COLUMNS) % (2 * COLUMNS) : 2 * lastFocused)
++                : lastFocused % COLUMNS;
++        focusTile(Math.min(lastRow + column, last));
++    }
++
++    // ---- half_grid row maths (local change). Without half_grid every row is COLUMNS long, as before. ----
++
++    /** First position of the row that holds p. */
++    private int rowStart(int p) {
++        if (!halfGrid || p < COLUMNS) return (p / COLUMNS) * COLUMNS;
++        return COLUMNS + ((p - COLUMNS) / (2 * COLUMNS)) * (2 * COLUMNS);
++    }
++
++    /** The position straight above p; negative from the first row. A half tile's dock tile is the one over it. */
++    private int above(int p) {
++        if (!halfGrid) return p - COLUMNS;
++        if (p < COLUMNS) return -1;
++        int g = p - COLUMNS;
++        return g < 2 * COLUMNS ? g / 2 : p - 2 * COLUMNS;
++    }
++
++    /** The position straight below p (it may be past the last tile). A dock tile has the left one of its two below. */
++    private int below(int p) {
++        if (!halfGrid) return p + COLUMNS;
++        return p < COLUMNS ? COLUMNS + 2 * p : p + 2 * COLUMNS;
++    }
++
++    /** The dock column above p, for Down from the top bar. */
++    private int dockColumn(int p) {
++        if (!halfGrid || p < COLUMNS) return p % COLUMNS;
++        return ((p - COLUMNS) % (2 * COLUMNS)) / 2;
+     }
+ 
+     private void focusLibrary() {
+diff --git a/launcher/app/src/main/res/values/config.xml b/launcher/app/src/main/res/values/config.xml
+index 2255d16f..8d0c286b 100644
+--- a/launcher/app/src/main/res/values/config.xml
++++ b/launcher/app/src/main/res/values/config.xml
+@@ -367,6 +367,9 @@
+     <!-- Names under every tile, not only the focused one: unfocused names stay dimmed, the focused one is full white.
+          With dock_row the band grows down to hold the dock's names too. -->
+     <bool name="always_show_names">false</bool>
++    <!-- Local change (TCL 75C755 setup): the rows under the dock hold twice as many tiles at about half the size, so
++         more apps fit on the first screen. Needs dock_row; ignored with single_row. Theme key "half_grid". -->
++    <bool name="half_grid">false</bool>
+     <!-- Wallpapers decode as RGB_565 (2 bytes a pixel, 4 MB at 1080p), which bands dark gradients such as a night
+          sky, most of all under wallpaper_dim. true decodes them in 32-bit colour: 8 MB, for TVs with 2 GB or more. -->
+     <bool name="wallpaper_true_color">false</bool>

@@ -1,0 +1,13 @@
+# Text is stored with LF; Windows checkouts may get CRLF in the working copy, which is fine for docs and lists.
+* text=auto
+
+# Patches must stay byte-exact, or `git am` fails on them.
+*.patch -text
+
+# Shell script: LF everywhere, or it won't run on macOS/Linux.
+gradlew text eol=lf
+
+*.apk binary
+*.jar binary
+*.png binary
+*.jpg binary

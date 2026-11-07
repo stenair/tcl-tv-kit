@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TV Buttons</string>
+    <string name="service_description">Gives remote buttons a job: TV inputs, apps, settings or a live camera picture. It reads the TV\'s button log over the TV\'s own debugging connection and never intercepts keys, so held volume keeps ramping.</string>
+
+    <!-- The app or Live TV package that opens a TV input (the passthrough URI), as in the launcher's live_tv_package. -->
+    <string name="live_tv_package" translatable="false">com.tcl.tv</string>
+
+    <!-- Button -> action, one per line: "<keyCode>=<target>". These are the BUILT-IN mappings (one TCL 75C755 with a
+         PS5 on HDMI 4 and cameras on HDMI 2). A file pushed to the TV replaces them without a rebuild:
+           /sdcard/Android/data/local.tvbuttons/files/mappings.txt   (same format; see mappings.example.txt)
+         keyCode as TCL's window manager logs it: a number for vendor keys (TCL's app buttons), the KEYCODE_ name for
+         known ones (KEYCODE_PROG_RED). Targets:
+           input:<tv input id>   switch to that input (ids from dumpsys tv_input; HW15..HW18 = HDMI 1..4 here)
+           <package>             open that app
+           settings              open TV settings
+           quick_settings        TCL's quick settings bar (falls back to TV settings)
+           camera:<n>            toggle a small live picture of recorder channel n (login: the TV Buttons app screen)
+           camera:<n>,<n>,...    step through those channels on each press; the press after the last closes
+         Codes read from this TV's remote (TCL BT, 2026-11-05, all scancode 240): Disney+ 4141, Stan 4136, YouTube
+         KEYCODE_BUTTON_3, Prime Video 4099, gear KEYCODE_NOTIFICATION, TCL 4020, Netflix 4062, colour buttons
+         KEYCODE_PROG_RED/GREEN/YELLOW/BLUE. YouTube, Prime, Netflix, the gear and TCL were handled by Google TV's home
+         (launcherx) or TCL's com.tcl.ttvs and did nothing once those were disabled; the TCL button also still asks
+         for TCL's old home (com.tcl.waterfall.overseas), which is disabled, so only this mapping acts on it. TCL
+         Channel is an input of its own: opening com.tcl.tv would resume whichever input was last used. -->
+    <string-array name="mappings" translatable="false">
+        <item>4141=input:com.tcl.tvinput/.TvPassThroughService/HW18</item> <!-- Disney+ -> PlayStation 5 (HDMI 4) -->
+        <item>4136=input:com.tcl.tvinput/.TvPassThroughService/HW16</item> <!-- Stan -> Cameras (HDMI 2) -->
+        <item>KEYCODE_BUTTON_3=com.google.android.youtube.tv</item> <!-- YouTube -->
+        <item>4099=com.amazon.amazonvideo.livingroom</item> <!-- Prime Video -->
+        <item>KEYCODE_NOTIFICATION=quick_settings</item> <!-- gear -> TCL's quick settings bar -->
+        <item>4020=input:com.tcl.channelplus/com.tcl.iptv.service.InputService</item> <!-- TCL -> TCL Channel -->
+        <item>4062=com.netflix.ninja</item> <!-- Netflix -->
+        <item>KEYCODE_PROG_YELLOW=camera:1</item> <!-- yellow -> camera overlay, recorder channel 1 -->
+        <item>KEYCODE_PROG_BLUE=camera:2</item> <!-- blue -> camera overlay, recorder channel 2 -->
+    </string-array>
+
+    <!-- Camera setup screen. -->
+    <string name="camera_title">Camera overlay</string>
+    <string name="camera_intro">A camera button shows that camera in a small window over whatever is on, games consoles included. Press it again to close it; a button with several cameras steps through them.\n\nThe login is the recorder\'s view-only account. It stays on this TV.</string>
+    <string name="camera_host">Recorder address</string>
+    <string name="camera_host_hint" translatable="false">e.g. 192.168.1.108</string>
+    <string name="camera_user">Username</string>
+    <string name="camera_pass">Password</string>
+    <string name="camera_name_label">Camera %1$d name (%2$s button)</string>
+    <string name="camera_name_hint">Camera %1$d</string>
+    <string name="camera_try">Try</string>
+    <string name="camera_save">Save</string>
+    <string name="camera_saved">Saved. The camera buttons now show your cameras.</string>
+    <string name="camera_previewing">Saved. The preview is bottom-right; it closes when you leave this screen.</string>
+    <string name="camera_need_host">Enter the recorder\'s address first.</string>
+    <string name="camera_no_service">TV Buttons isn\'t running, so the buttons and preview won\'t work. It starts by itself after a restart.</string>
+    <string name="camera_none_mapped">No button shows a camera yet. Map one (camera:1) in mappings.txt.</string>
+    <string name="camera_source_builtin">Buttons: built-in mappings.</string>
+    <string name="camera_source_file">Buttons: from mappings.txt on this TV.</string>
+</resources>

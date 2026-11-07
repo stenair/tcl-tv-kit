@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- App Library tile for TV Buttons' camera setup: the launcher's Cameras artwork (dark slate, video-camera glyph). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp" android:height="180dp"
+    android:viewportWidth="320" android:viewportHeight="180">
+    <path android:fillColor="#FF2B3644" android:pathData="M0,0h320v180H0z" />
+    <group android:translateX="118" android:translateY="48" android:scaleX="3.5" android:scaleY="3.5">
+        <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd"
+            android:pathData="M3,7h10a2,2 0,0 1,2 2v1.6L21,7.5v9L15,13.4V15a2,2 0,0 1,-2 2H3a2,2 0,0 1,-2 -2V9a2,2 0,0 1,2 -2zM3.4,10a1.1,1.1 0,1 0,2.2 0a1.1,1.1 0,1 0,-2.2 0z" />
+    </group>
+</vector>

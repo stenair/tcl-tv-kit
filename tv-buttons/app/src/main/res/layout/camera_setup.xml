@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The camera login screen, opened from the App Library (TV Buttons). Sized for a 960x540 dp TV screen. The camera
+     rows are added at runtime, one per recorder channel that a button shows (layout/camera_row.xml). -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FF0B0D10"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:baselineAligned="false"
+        android:orientation="horizontal"
+        android:paddingStart="56dp"
+        android:paddingTop="40dp"
+        android:paddingEnd="56dp"
+        android:paddingBottom="32dp">
+
+        <!-- Left: what this is. -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="40dp"
+            android:layout_weight="2"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/camera_title"
+                android:textColor="#FFFFFFFF"
+                android:textSize="28sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:lineSpacingExtra="4dp"
+                android:text="@string/camera_intro"
+                android:textColor="#B3FFFFFF"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/camera_source"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:textColor="#80FFFFFF"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/camera_state"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:lineSpacingExtra="4dp"
+                android:textColor="#FFFFD60A"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- Right: the form. -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="3"
+            android:orientation="vertical">
+
+            <TextView style="@style/CameraLabel" android:text="@string/camera_host" />
+            <EditText
+                android:id="@+id/camera_host"
+                style="@style/CameraField"
+                android:hint="@string/camera_host_hint"
+                android:inputType="textUri" />
+
+            <TextView style="@style/CameraLabel" android:text="@string/camera_user" />
+            <EditText
+                android:id="@+id/camera_user"
+                style="@style/CameraField"
+                android:inputType="text" />
+
+            <TextView style="@style/CameraLabel" android:text="@string/camera_pass" />
+            <EditText
+                android:id="@+id/camera_pass"
+                style="@style/CameraField"
+                android:inputType="textPassword" />
+
+            <LinearLayout
+                android:id="@+id/camera_rows"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <Button
+                android:id="@+id/camera_save"
+                style="@style/CameraButton"
+                android:layout_marginTop="24dp"
+                android:text="@string/camera_save" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

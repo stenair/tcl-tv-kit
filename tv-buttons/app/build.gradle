@@ -1,0 +1,49 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'local.tvbuttons'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'local.tvbuttons'
+        minSdk 26
+        targetSdk 34
+        // 3 (1.2) was the same code as 1.0: version 2 (1.1) briefly carried a one-off on-screen message, since
+        // removed, and Android only installs a higher versionCode over it. 4 (1.3): the YouTube, Prime Video, gear
+        // and TCL buttons, which Google TV's home used to handle. 5 (1.4): <queries> so app targets are visible.
+        // 6 (1.5): Netflix (4062), and TCL straight to the TCL Channel input.
+        // 7 (1.6): the gear opens TCL's own quick settings bar. 8 (1.7): on the gear's release, and as a toggle.
+        // 9 (1.8): Back guard, YouTube no longer exits when Back closes TV settings over it.
+        // 10 (2.0): camera overlay (yellow = camera 1, blue = camera 2) and its setup screen.
+        // 11 (2.1): mappings.txt pushed to the TV replaces the built-in mappings (no rebuild for another TV); any
+        // number of cameras (camera:n toggles, camera:a,b,c steps through); setup screen lists every mapped camera.
+        versionCode 11
+        versionName '2.1'
+    }
+
+    buildTypes {
+        release {
+            // R8 since 2.0: it trims the Media3 player (and the Guava it brings) to what the camera overlay uses.
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+            // Same as the launcher: signed with this PC's debug key, built from source here.
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    // Google's Media3 player for the camera overlay's RTSP stream. The TV's built-in player misreads the recorder's
+    // H.265 sub-stream (picture size "287 x 0", no decoder) and writes the full address, login included, to the log.
+    implementation 'androidx.media3:media3-exoplayer:1.4.1'
+    implementation 'androidx.media3:media3-exoplayer-rtsp:1.4.1'
+    // @OptIn for Media3's "unstable" APIs used here (the live-preview buffer, the RTSP source).
+    implementation 'androidx.annotation:annotation-experimental:1.4.1'
+}
