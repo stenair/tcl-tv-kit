@@ -114,3 +114,4 @@ key) and [docs/08](../docs/08-maintenance-and-undo.md) (undo).
 | 2.0 (10) | camera overlay (yellow/blue), setup screen, Media3, R8 |
 | 2.1 (11) | `mappings.txt` without rebuilding; any number of cameras (`camera:a,b,c` steps through); setup lists every mapped camera; lint clean |
 | 2.2 (12) | Instant cameras: independent feeds (switching ~0.05 s), "Keep cameras ready" (open ~0.1 s; switch + red button `cameras_ready` with a notice), the recorder's still on cold opens, timing logs. Measured cost in docs/07 |
+| 2.2-cameras (12) | Branch `cameras-only`: built-in mappings are only red/green/yellow/blue → cameras 1–4; "Keep cameras ready" on the setup screen only; Back guard off (`res/values` bool `back_guard`), so only `WindowManager` and `QSOptionMenusDialog` are read. [docs/cameras-only.md](../docs/cameras-only.md) |

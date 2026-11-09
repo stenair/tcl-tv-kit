@@ -22,7 +22,9 @@ android {
         // 12 (2.2): the overlay shows the camera's still JPEG at once while the live stream connects, and keeps the
         // likely next camera warm while it is open, so switching is instant.
         versionCode 12
-        versionName '2.2'
+        // 12 (2.2-cameras, branch cameras-only): built-in mappings are the four colour buttons -> cameras 1-4 only;
+        // no app, input, gear or ready-toggle buttons; Back guard off (res bool back_guard).
+        versionName '2.2-cameras'
     }
 
     buildTypes {

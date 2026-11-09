@@ -41,6 +41,8 @@ public final class ButtonService extends AccessibilityService {
     private static final Pattern MOVED_BACK = Pattern.compile("moveTaskToBack: Task\\{\\S+ #(\\d+) \\S+ A=(\\d+):");
     private static final String LOG_COMMAND = "logcat -v brief -T 1 -s WindowManager:D " + QUICK_TAG
             + ":D InputDispatcher:D ActivityTaskManager:I";
+    /** Without the Back guard (res bool back_guard false, the cameras-only build): key presses and the bar only. */
+    private static final String LOG_COMMAND_NO_GUARD = "logcat -v brief -T 1 -s WindowManager:D " + QUICK_TAG + ":D";
     /** How long after the Back release an app's "exit" still counts as the stray release (YouTube: ~300 ms). */
     private static final long BACK_GUARD_MS = 1500;
 
@@ -135,8 +137,9 @@ public final class ButtonService extends AccessibilityService {
             try (AdbClient c = AdbClient.connect("127.0.0.1", 5555, AdbClient.keys(this), "tvbuttons@tv", 120_000)) {
                 client = c;
                 backoff = 2000;
-                Log.i(TAG, "watching the button log for " + mappings.keySet());
-                c.shellLines(LOG_COMMAND, this::onLine);
+                boolean guard = getResources().getBoolean(R.bool.back_guard);
+                Log.i(TAG, "watching the button log for " + mappings.keySet() + (guard ? "" : " (Back guard off)"));
+                c.shellLines(guard ? LOG_COMMAND : LOG_COMMAND_NO_GUARD, this::onLine);
             } catch (Exception e) {
                 if (running) Log.w(TAG, "debugging connection: " + e);
             } finally {

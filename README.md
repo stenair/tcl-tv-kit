@@ -1,5 +1,10 @@
 # TCL Google TV clean-up kit (TCL 75C755)
 
+> [!NOTE]
+> **Branch `cameras-only`:** a cut-down install for a TV that should get **only the camera overlay** (red, green,
+> yellow, blue → cameras 1–4) and nothing else: no debloat, no launcher, no other buttons, Google TV's home untouched.
+> Follow **[docs/cameras-only.md](docs/cameras-only.md)** instead of steps 3–6. The full kit is on branch `main`.
+
 Everything needed to turn a TCL C755 Google TV from an ad-filled Google TV home into a fast, clean, ad-free one, the
 way it was done on a 75C755 in November 2026. Every step can be undone, nothing is uninstalled from the TV's
 system, and no root is used.

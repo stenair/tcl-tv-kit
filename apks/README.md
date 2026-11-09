@@ -10,7 +10,8 @@
 | File | Package | Version | Built from |
 |---|---|---|---|
 | `cleanyourtv-launcher-3.3-tcl-c755.apk` | `com.gathin.tvhome` | 3.3 (versionCode 12) | upstream CleanYourTV `04aec4b7` + `../cleanyourtv/patches/` (the exact APK running on the 75C755 this kit was made on) |
-| `tv-buttons-2.2.apk` | `local.tvbuttons` | 2.2 (versionCode 12) | `../tv-buttons/` (Media3 1.4.1 inside, Apache 2.0) |
+| `tv-buttons-2.2.apk` | `local.tvbuttons` | 2.2 (versionCode 12) | `../tv-buttons/` on branch `main` (Media3 1.4.1 inside, Apache 2.0) |
+| `tv-buttons-2.2-cameras.apk` | `local.tvbuttons` | 2.2-cameras (versionCode 12) | `../tv-buttons/` on branch `cameras-only`: the four colour buttons → cameras 1–4 only, Back guard off ([cameras-only install](../docs/cameras-only.md)) |
 
 Check them with `SHA256SUMS.txt` (`Get-FileHash -Algorithm SHA256 <file>` in PowerShell).
 
