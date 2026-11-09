@@ -106,6 +106,16 @@ final class Mappings {
         return new ArrayList<>(set);
     }
 
+    /** The first channel of every camera button, in mapping order: what "Keep cameras ready" keeps running. */
+    static List<Integer> firstCameras(Map<String, String> mappings) {
+        List<Integer> out = new ArrayList<>();
+        for (String target : mappings.values()) {
+            int[] ch = cameraChannels(target);
+            if (ch != null && !out.contains(ch[0])) out.add(ch[0]);
+        }
+        return out;
+    }
+
     /** The first button that shows channel n, by its spoken name, for hints ("yellow"); null when none does. */
     static String buttonForCamera(Map<String, String> mappings, int n) {
         for (Map.Entry<String, String> e : mappings.entrySet()) {

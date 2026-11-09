@@ -1,2 +1,2 @@
 2d24fd20faa2db25fdfd5c7744c7deea1dc9701fcec11f0e774fc275777e002a *cleanyourtv-launcher-3.3-tcl-c755.apk
-a6001691c5020a23347903ffc4bc71e549997f077b95d724c8a77ab358def171 *tv-buttons-2.1.apk
+64ca7f36e175a10e34e5589be4e8eb6ffd7bc2d809cdd31e1949922c2bfac65d *tv-buttons-2.2.apk

@@ -76,6 +76,20 @@ most of it cost time to find out.
   stream plays alongside Netflix without stutter.
 - **Deco routers:** the guest Wi-Fi uses the same address range as the main network but blocks traffic between
   them (no ARP reply), and casting needs phone and TV on one network.
+- **Camera open time is the keyframe wait.** Cold: ~1 s to connect, then ~2 s until the camera's next keyframe.
+  The Dahua recorder's still (`snapshot.cgi`) is the full 6 MP JPEG (1.5 MB) and takes it 1.5–2 s, so stills barely
+  help on this recorder. Its TV menu has no I-frame interval setting (only in the web interface / the camera).
+- **A running Media3 player can switch screens without a keyframe.** Detached from the window, it decodes into
+  Media3's placeholder surface; attached again (`setVideoTextureView`, i.e. `MediaCodec.setOutputSurface`), the next
+  frame shows in 20–200 ms on this MediaTek decoder. That's the "Keep cameras ready" trick, and why switching is
+  instant.
+- **Cost of a camera stream:** one shown ≈ +10% of the TV; each one kept ready off screen ≈ +3–4% of the TV (TV
+  Buttons' player loop plus MediaTek's `c2` decoder service). The launcher benchmark showed no noticeable effect.
+- **The idle TV isn't idle:** Google Assistant's always-listening interactor (`katniss`) uses ~27% of one core all
+  the time, TCL's picture engine (`pqu`) ~16%, the audio HAL ~15%. More than the cameras ever do.
+- **Colour buttons reach the app in front.** YouTube shows its controls for any standard key, colour buttons
+  included; it ignores TCL's vendor codes (≥ 4000). Only key filtering could hide a key from the app (and it breaks
+  held volume), and TCL's key layout files are read-only.
 
 ## Dead ends (so you don't repeat them)
 
@@ -94,6 +108,10 @@ most of it cost time to find out.
 | Broadcast `com.tcl.showsetting` to `ShortCutMenuReceiver` | Nothing happens |
 | `input keyevent --duration` / `--longpress` to test held keys | `--duration` isn't honoured (press and release at the same instant); `--longpress` sends a long press. `sendevent` is denied by SELinux |
 | Live `logcat` over `tv.py` for minutes | Times out (output is buffered); record to a file on the TV instead |
+| A still JPEG first, to hide the camera's ~3 s start (your brother's Linux viewer does this) | Works, but this recorder takes 1.5–2 s to make a 6 MP still, so it only gains ~1 s; kept for cold opens, made redundant by "Keep cameras ready" |
+| Keeping the warm camera drawn under the shown one | Works, but costs screen compositing; decoding off screen (placeholder surface) does the same for less |
+| Media3 `experimentalSetDynamicSchedulingEnabled` | No measurable CPU saving for the ready streams |
+| Hiding colour-button presses from YouTube | Impossible without key filtering (volume) or root (key layouts) |
 
 ## Tooling gotchas (Windows)
 
@@ -120,7 +138,11 @@ most of it cost time to find out.
 | What | Value |
 |---|---|
 | TV Buttons log reader | ~0.3% of one core, ~3 MB |
-| Camera overlay, while showing | ~13% of one core (~3% of the TV), ~20 MB; 3.5 s to picture |
+| Camera overlay, one camera showing | whole TV 27% → 37%; TV Buttons ~15% of one core |
+| Camera overlay, showing + warm next camera | whole TV → 42%; TV Buttons ~25% of one core |
+| "Keep cameras ready" (2 cameras, overlay closed) | whole TV ~+6–8%; TV Buttons ~17% of one core, ~16 MB; ~1 Mbit/s LAN |
+| Camera open time | cold ~3 s (connect ~1 s + keyframe ~2 s); ready 0.1–0.2 s; switch 0.02–0.05 s |
+| Launcher benchmark, ready off vs on | key p50 103 vs 105 ms; jank 5.1 vs 5.3%; app cold start p50 528 vs 574 ms |
 | `com.tcl.interactive` on vs off | ~0.2% vs ~1.2% of a core; 0 vs ~150 log lines a second |
 | Launcher APK | 590,965 bytes (upstream gate 589,824) |
 | TV Buttons APK | ~467 KB (Media3, trimmed by R8) |

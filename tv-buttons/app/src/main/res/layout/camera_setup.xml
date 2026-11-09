@@ -92,10 +92,34 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical" />
 
+            <Switch
+                android:id="@+id/camera_ready"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:background="@drawable/camera_field"
+                android:paddingStart="14dp"
+                android:paddingTop="10dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="10dp"
+                android:text="@string/camera_ready"
+                android:textColor="#FFFFFFFF"
+                android:textSize="17sp" />
+
+            <TextView
+                android:id="@+id/camera_ready_note"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:lineSpacingExtra="2dp"
+                android:text="@string/camera_ready_note"
+                android:textColor="#99FFFFFF"
+                android:textSize="13sp" />
+
             <Button
                 android:id="@+id/camera_save"
                 style="@style/CameraButton"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="20dp"
                 android:text="@string/camera_save" />
         </LinearLayout>
     </LinearLayout>

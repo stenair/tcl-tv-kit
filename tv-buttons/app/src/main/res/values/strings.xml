@@ -17,6 +17,7 @@
            quick_settings        TCL's quick settings bar (falls back to TV settings)
            camera:<n>            toggle a small live picture of recorder channel n (login: the TV Buttons app screen)
            camera:<n>,<n>,...    step through those channels on each press; the press after the last closes
+           cameras_ready         switch "Keep cameras ready" on/off, with a small notice top-right
          Codes read from this TV's remote (TCL BT, 2026-11-05, all scancode 240): Disney+ 4141, Stan 4136, YouTube
          KEYCODE_BUTTON_3, Prime Video 4099, gear KEYCODE_NOTIFICATION, TCL 4020, Netflix 4062, colour buttons
          KEYCODE_PROG_RED/GREEN/YELLOW/BLUE. YouTube, Prime, Netflix, the gear and TCL were handled by Google TV's home
@@ -33,6 +34,7 @@
         <item>4062=com.netflix.ninja</item> <!-- Netflix -->
         <item>KEYCODE_PROG_YELLOW=camera:1</item> <!-- yellow -> camera overlay, recorder channel 1 -->
         <item>KEYCODE_PROG_BLUE=camera:2</item> <!-- blue -> camera overlay, recorder channel 2 -->
+        <item>KEYCODE_PROG_RED=cameras_ready</item> <!-- red -> "Keep cameras ready" on/off -->
     </string-array>
 
     <!-- Camera setup screen. -->
@@ -51,6 +53,10 @@
     <string name="camera_need_host">Enter the recorder\'s address first.</string>
     <string name="camera_no_service">TV Buttons isn\'t running, so the buttons and preview won\'t work. It starts by itself after a restart.</string>
     <string name="camera_none_mapped">No button shows a camera yet. Map one (camera:1) in mappings.txt.</string>
+    <string name="camera_ready">Keep cameras ready (instant open)</string>
+    <string name="camera_ready_note">Streams the first camera of each button in the background while the TV is on, so it appears the moment you press. Off: about 3 seconds to open. Stops on standby. Measured cost is in the kit\'s docs.</string>
+    <string name="camera_ready_on">On. The cameras will be ready within a few seconds.</string>
+    <string name="camera_ready_off">Background cameras stopped. Opening takes about 3 seconds again.</string>
     <string name="camera_source_builtin">Buttons: built-in mappings.</string>
     <string name="camera_source_file">Buttons: from mappings.txt on this TV.</string>
 </resources>

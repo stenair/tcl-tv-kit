@@ -12,7 +12,7 @@ with how to check it.
 
 0. **Verify the versions first.** This kit was built for one TV: TCL 75C755, firmware
    `tcl9618-user 14 UTT2.250416.001 AU02` (Android 14, security patch 2025-12-05), CleanYourTV `04aec4b7` + launcher
-   3.3, TV Buttons 2.1 (full table in `README.md`). Before any change, run `docs/01`'s comparison and show the owner
+   3.3, TV Buttons 2.2 (full table in `README.md`). Before any change, run `docs/01`'s comparison and show the owner
    what matches and what differs. **Where anything differs, don't apply that step from the kit as written:**
    re-verify its facts on this TV (package present and doing the same thing, the button's real code, the input's real
    ID, the TCL service present), adapt, and tell the owner. After a firmware update, re-check the same way.

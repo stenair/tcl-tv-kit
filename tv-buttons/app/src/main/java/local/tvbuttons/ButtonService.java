@@ -11,6 +11,7 @@ import android.media.tv.TvContract;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.util.Log;
@@ -57,14 +58,20 @@ public final class ButtonService extends AccessibilityService {
     private Thread reader;
     private static volatile ButtonService instance;
     private CameraOverlay camera;
-    /** The camera overlay closes when the TV goes to standby, so it never streams to a dark screen. */
-    private final BroadcastReceiver screenOff = new BroadcastReceiver() {
+    private Notice notice;
+    /**
+     * Standby: the camera overlay closes and every camera stream stops, so nothing streams to a dark screen. Wake:
+     * "Keep cameras ready" (if on) starts its streams again a few seconds later.
+     */
+    private final BroadcastReceiver screen = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (camera != null) camera.close();
+            if (camera == null) return;
+            if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) camera.screenOff();
+            else camera.screenOn();
         }
     };
-    private boolean screenOffRegistered;
+    private boolean screenRegistered;
 
     /** The running service, for the camera setup screen's preview; null when the service isn't bound. */
     static ButtonService running() {
@@ -73,13 +80,16 @@ public final class ButtonService extends AccessibilityService {
 
     @Override
     protected void onServiceConnected() {
-        reloadMappings();
         if (camera == null) camera = new CameraOverlay(this);
-        if (!screenOffRegistered) {
+        if (notice == null) notice = new Notice(this);
+        if (getSystemService(PowerManager.class).isInteractive()) camera.screenOn(); // ready streams in a few seconds
+        reloadMappings();
+        if (!screenRegistered) {
             IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
-            if (Build.VERSION.SDK_INT >= 33) registerReceiver(screenOff, filter, Context.RECEIVER_NOT_EXPORTED);
-            else registerReceiver(screenOff, filter);
-            screenOffRegistered = true;
+            filter.addAction(Intent.ACTION_SCREEN_ON);
+            if (Build.VERSION.SDK_INT >= 33) registerReceiver(screen, filter, Context.RECEIVER_NOT_EXPORTED);
+            else registerReceiver(screen, filter);
+            screenRegistered = true;
         }
         instance = this;
         if (running) return;
@@ -88,9 +98,19 @@ public final class ButtonService extends AccessibilityService {
         reader.start();
     }
 
+    /** Called on the main thread at start, and on the log thread when mappings.txt changes. */
     private void reloadMappings() {
         mappingsStamp = Mappings.stamp(this);
-        mappings = Mappings.load(this);
+        Map<String, String> m = Mappings.load(this);
+        mappings = m;
+        main.post(() -> {
+            if (camera != null) camera.setCameras(Mappings.allCameras(m), Mappings.firstCameras(m));
+        });
+    }
+
+    /** "Keep cameras ready" was switched on the setup screen. */
+    void applyReady() {
+        if (camera != null) camera.scheduleReady(0);
     }
 
     /** The mappings in force, for the camera setup screen. */
@@ -102,7 +122,7 @@ public final class ButtonService extends AccessibilityService {
     void showCamera(int n) {
         camera.close();
         String button = Mappings.buttonForCamera(mappings, n);
-        camera.press(new int[]{n}, button != null ? button : "the same button");
+        camera.press(new int[]{n}, button != null ? button : "the same button", Mappings.allCameras(mappings));
     }
 
     void closeCamera() {
@@ -199,8 +219,16 @@ public final class ButtonService extends AccessibilityService {
             } else if (target.startsWith("camera:")) {
                 // camera:2 toggles channel 2; camera:3,4,5 steps through those channels, then closes.
                 int[] channels = Mappings.cameraChannels(target);
-                if (channels != null) camera.press(channels, Mappings.buttonName(key));
+                if (channels != null) camera.press(channels, Mappings.buttonName(key), Mappings.allCameras(mappings));
                 else Log.w(TAG, "bad camera target " + target);
+            } else if (target.equals("cameras_ready")) {
+                // Flip "Keep cameras ready" without the setup screen, with a quiet confirmation top-right.
+                boolean on = camera.toggleReady();
+                if (!getSharedPreferences(CameraOverlay.PREFS, MODE_PRIVATE).getString("pass", "").isEmpty()) {
+                    notice.show(on ? "Instant cameras on" : "Instant cameras off", on ? 0xFF30D158 : 0xFF8E8E93);
+                } else {
+                    notice.show("Set up the camera login first (TV Buttons app)", 0xFFFFD60A);
+                }
             } else if (target.equals("quick_settings")) {
                 // TCL's own quick settings bar (picture, sound, network...; editable with its "+"), the panel TCL's
                 // other TVs open from the gear. It lives in the TV settings app's ShowWindowService.
@@ -266,13 +294,14 @@ public final class ButtonService extends AccessibilityService {
 
     private void stop() {
         if (instance == this) instance = null;
-        if (camera != null) camera.close();
-        if (screenOffRegistered) {
+        if (camera != null) camera.screenOff(); // closes the overlay and stops every stream, ready ones included
+        if (notice != null) notice.dismiss();
+        if (screenRegistered) {
             try {
-                unregisterReceiver(screenOff);
+                unregisterReceiver(screen);
             } catch (RuntimeException ignored) {
             }
-            screenOffRegistered = false;
+            screenRegistered = false;
         }
         running = false;
         AdbClient c = client;

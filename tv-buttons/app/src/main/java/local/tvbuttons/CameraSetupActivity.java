@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -64,6 +65,15 @@ public final class CameraSetupActivity extends Activity {
             none.setTextColor(0xB3FFFFFF);
             rows.addView(none);
         }
+
+        Switch ready = findViewById(R.id.camera_ready);
+        ready.setChecked(p.getBoolean(CameraOverlay.PREF_READY, false));
+        ready.setOnCheckedChangeListener((b, on) -> {
+            getSharedPreferences(CameraOverlay.PREFS, MODE_PRIVATE).edit().putBoolean(CameraOverlay.PREF_READY, on).apply();
+            ButtonService s2 = ButtonService.running();
+            if (s2 != null) s2.applyReady();
+            showState(getString(on ? R.string.camera_ready_on : R.string.camera_ready_off));
+        });
 
         findViewById(R.id.camera_save).setOnClickListener(v -> save(0));
         ((TextView) findViewById(R.id.camera_source)).setText(Mappings.fromFile(this)

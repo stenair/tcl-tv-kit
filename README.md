@@ -17,7 +17,7 @@ system, and no root is used.
 > | Software | Google TV / Android **14** (SDK 34), firmware **`tcl9618-user 14 UTT2.250416.001 AU02`**, security patch **2025-12-05** |
 > | Remote | TCL Bluetooth voice remote with Netflix, YouTube, Prime Video, Disney+, Stan, TCL and four colour buttons |
 > | CleanYourTV | upstream commit **`04aec4b7`**, launcher **3.3** + [our two patches](cleanyourtv/README.md) |
-> | TV Buttons | **2.1** (Media3 **1.4.1**) |
+> | TV Buttons | **2.2** (Media3 **1.4.1**) |
 > | Cameras | Dahua 4-channel recorder (DMSS app), RTSP sub-stream H.265 704×576 |
 > | Network | TP-Link Deco mesh; TV, PC and recorder on the main network |
 > | PC | Windows 11, Python 3.14, Microsoft OpenJDK 17, Android SDK platform 34 / build-tools 34.0.0 |
@@ -45,7 +45,8 @@ system, and no root is used.
   | TCL | TCL Channel |
   | Disney+ | PlayStation 5 (HDMI 4) |
   | Stan | the camera recorder's screen (HDMI 2) |
-  | yellow, blue | a live camera picture in a corner, over anything, PS5 included |
+  | yellow, blue | a live camera picture in a corner, over anything, PS5 included: instant (~0.1 s) with "Keep cameras ready" on, switching between cameras instant either way |
+  | red | "Keep cameras ready" on/off, with a small notice |
 
 - **Still working:** Chromecast, the Google Assistant / Gemini mic, the game bar, TCL Channel and Play Store. The
   TV boots straight into the new Home, and firmware updates are installed by hand when you choose.

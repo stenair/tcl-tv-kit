@@ -25,8 +25,11 @@
         </intent>
     </queries>
 
+    <!-- usesCleartextTraffic: the camera overlay fetches its still from the recorder over plain HTTP on the home
+         network (Dahua's snapshot.cgi has no HTTPS on these recorders). Nothing else uses HTTP. -->
     <application
         android:allowBackup="false"
+        android:usesCleartextTraffic="true"
         android:banner="@drawable/banner"
         android:icon="@drawable/icon"
         android:label="@string/app_name">

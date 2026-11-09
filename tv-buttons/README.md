@@ -1,6 +1,6 @@
 # TV Buttons
 
-An Android TV app (package `local.tvbuttons`, 2.1, ~467 KB, plain Java plus Google's Media3 player) that gives remote
+An Android TV app (package `local.tvbuttons`, 2.2, ~475 KB, plain Java plus Google's Media3 player) that gives remote
 buttons a job on TCL Google TVs: open apps, switch inputs, open TCL's quick-settings bar, show a live camera picture.
 It **never intercepts a key**, so held volume keeps ramping and held arrows keep scrolling. How to install and use
 it: [docs/06](../docs/06-remote-buttons.md) and [docs/07](../docs/07-camera-overlay.md). This page is how it's built.
@@ -18,8 +18,10 @@ it: [docs/06](../docs/06-remote-buttons.md) and [docs/07](../docs/07-camera-over
 | Service | `ButtonService.java` | An accessibility service with **no key filtering** (capabilities 0, `res/xml/button_service.xml`). Android binds it at boot; it starts the log reader, acts on mapped buttons, owns the camera overlay and the Back guard |
 | ADB client | `AdbClient.java` | A minimal ADB protocol client to the TV's own port `127.0.0.1:5555` (CNXN, RSA AUTH with its own key stored in app files, `shell:` streams). Approved once on the TV ("Always allow") |
 | Mappings | `Mappings.java` | The button → target map: built in (`res/values/strings.xml`) or a pushed `mappings.txt` that replaces it; camera target parsing; button names for hints |
-| Camera overlay | `CameraOverlay.java` | A `TYPE_ACCESSIBILITY_OVERLAY` window (not focusable/touchable, 400×225 dp, bottom-right) with a `TextureView` and a Media3 ExoPlayer on the recorder's RTSP sub-stream, over TCP, video only |
-| Setup screen | `CameraSetupActivity.java`, `layout/camera_setup.xml`, `layout/camera_row.xml` | App Library → TV Buttons: recorder address, login, one name + Try per mapped camera. Stored in private `SharedPreferences` (`camera`: `host`, `user`, `pass`, `name<n>`) |
+| Camera overlay | `CameraOverlay.java` | A `TYPE_ACCESSIBILITY_OVERLAY` window (not focusable/touchable, 400×225 dp, bottom-right) showing one camera; camera *feeds* (one Media3 ExoPlayer each on the recorder's RTSP sub-stream, over TCP, video only) that run independently of the window; "Keep cameras ready" |
+| Still | `Snapshot.java` | The recorder's still JPEG (`/cgi-bin/snapshot.cgi?channel=<n>`) with a hand-written HTTP Digest login (Android's HttpURLConnection has none), decoded downsampled; timings for the log |
+| Notice | `Notice.java` | The small fading confirmation pill top-right (`cameras_ready`) |
+| Setup screen | `CameraSetupActivity.java`, `layout/camera_setup.xml`, `layout/camera_row.xml` | App Library → TV Buttons: recorder address, login, one name + Try per mapped camera, the "Keep cameras ready" switch. Stored in private `SharedPreferences` (`camera`: `host`, `user`, `pass`, `name<n>`, `ready`) |
 
 **The log it reads** (one ADB shell stream):
 `logcat -v brief -T 1 -s WindowManager:D QSOptionMenusDialog:D InputDispatcher:D ActivityTaskManager:I`
@@ -44,6 +46,7 @@ All four are silent at idle. The reader costs ~0.3% of one core.
 | `settings` | `Settings.ACTION_SETTINGS` |
 | `quick_settings` | `startService(com.tcl.settings.SHOW_WINDOW → com.android.tv.settings/com.tcl.settings.ShowWindowService, Type=quicksettings)`, else settings |
 | `camera:<n>` / `camera:<a>,<b>,…` | the overlay: toggle one channel / step through a list, close after the last |
+| `cameras_ready` | flips the `ready` preference ("Keep cameras ready") and shows a `Notice` |
 
 **Back guard.** A Back press delivered to TV Settings arms it (until 1.5 s after the release); an app task moved to
 the back while armed is put back with `ActivityManager.moveTaskToFront` (`REORDER_TASKS`), falling back to its
@@ -54,7 +57,19 @@ URL-encoded, so any characters work; **never logged**: only error codes are). Me
 `setForceUseRtpTcp(true)`, an 8 s timeout, audio disabled in the track selection, and a short live buffer
 (`DefaultLoadControl` 500/2000/250/250 ms). Retries every 5 s; after 3 failures the message mentions the login.
 Closes on the same button, on `ACTION_SCREEN_OFF`, and when the setup screen pauses. Another brand's recorder:
-change the URL in `play()`.
+change the URL in `startPlayer()` (and the still's path in `Snapshot.fetch()`).
+
+**Feeds and instant opening.** Each camera is a `Feed` (a player) kept in a map, not tied to the window. Only the
+shown feed is attached to the window's `TextureView` (`setVideoTextureView`); detached feeds keep decoding into
+Media3's placeholder surface (`clearVideoTextureView` → `MediaCodec.setOutputSurface`), so re-attaching shows the
+next frame without a new connection or keyframe (20–200 ms here). `trimFeeds()` keeps exactly: the shown camera,
+the likely next one (`nextWarm`: next in a stepping list, else the previous camera, else another mapped one; started
+400 ms after the shown one is live), and with `ready` on, the first camera of each camera button (max 4). The
+window's picture stays transparent until the new feed's first frame (`onRenderedFirstFrame`), so a switch never
+shows the previous camera under the new name. A cold feed shows the still (grey dot) until then. Screen off: the
+window closes and every feed is released; screen on (and service start): ready feeds start 15 s later. A ready feed
+that fails retries from 30 s, backing off to 5 min. Logs: `camera N stream connected in …`, `still in … (…)`,
+`live in … ms`, `running off screen`, `keep cameras ready: on/off`.
 
 ## Mappings
 
@@ -75,7 +90,7 @@ $env:JAVA_HOME = 'C:\Program Files\Microsoft\jdk-17.0.21.21-hotspot'    # your J
 ```
 
 Output: `app\build\outputs\apk\release\app-release.apk` (R8 on; signed with this PC's debug key). Lint: 0 errors.
-Raise `versionCode` in `app/build.gradle` for every build you install over an older one (2.1 = 11). An APK signed
+Raise `versionCode` in `app/build.gradle` for every build you install over an older one (2.2 = 12). An APK signed
 with a different key can't update an installed one: see `../apks/README.md`.
 
 ## Install, enable, undo
@@ -98,3 +113,4 @@ key) and [docs/08](../docs/08-maintenance-and-undo.md) (undo).
 | 1.8 (9) | Back guard (YouTube exiting on the stray Back release) |
 | 2.0 (10) | camera overlay (yellow/blue), setup screen, Media3, R8 |
 | 2.1 (11) | `mappings.txt` without rebuilding; any number of cameras (`camera:a,b,c` steps through); setup lists every mapped camera; lint clean |
+| 2.2 (12) | Instant cameras: independent feeds (switching ~0.05 s), "Keep cameras ready" (open ~0.1 s; switch + red button `cameras_ready` with a notice), the recorder's still on cold opens, timing logs. Measured cost in docs/07 |

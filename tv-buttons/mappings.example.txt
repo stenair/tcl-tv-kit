@@ -20,6 +20,7 @@
 #   quick_settings           TCL's own quick settings bar (the gear); falls back to TV settings
 #   camera:<n>               camera overlay: toggle a live picture of recorder channel n
 #   camera:<n>,<n>,...       camera overlay: each press shows the next channel; the press after the last closes
+#   cameras_ready            switch "Keep cameras ready" (instant camera opening) on/off, with a small notice
 #
 # ---- The 75C755 set-up this kit was built on (= the built-in list) --------------------------------------------
 4141=input:com.tcl.tvinput/.TvPassThroughService/HW18          # Disney+ button -> PlayStation 5 on HDMI 4
@@ -31,6 +32,7 @@ KEYCODE_NOTIFICATION=quick_settings                            # gear -> TCL's q
 4062=com.netflix.ninja                                         # Netflix button (TCL sent it to the disabled ttvs)
 KEYCODE_PROG_YELLOW=camera:1                                   # yellow -> camera 1
 KEYCODE_PROG_BLUE=camera:2                                     # blue   -> camera 2
+KEYCODE_PROG_RED=cameras_ready                                 # red    -> "Keep cameras ready" on/off
 
 # ---- More cameras: examples (uncomment / adapt) -----------------------------------------------------------------
 # Four cameras, one colour button each (the four colour buttons are free on a TV with no antenna):

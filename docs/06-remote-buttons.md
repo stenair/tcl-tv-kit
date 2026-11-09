@@ -1,7 +1,7 @@
 # 6. Remote buttons (TV Buttons)
 
 After step 5, YouTube, Prime Video, Netflix, the gear and the TCL button do nothing, and Stan, Disney+ and the colour
-buttons were never useful. **TV Buttons** (`apks/tv-buttons-2.1.apk`, source in [`tv-buttons/`](../tv-buttons/))
+buttons were never useful. **TV Buttons** (`apks/tv-buttons-2.2.apk`, source in [`tv-buttons/`](../tv-buttons/))
 gives them all a job **without breaking held volume**.
 
 ## Why this needed its own app
@@ -49,14 +49,22 @@ changed without root. A tap is one step.
 | gear | `KEYCODE_NOTIFICATION` | **TCL's quick-settings bar** | opened Google TV's side panel |
 | TCL | `4020` | TCL Channel input | opened TCL's (disabled) recommendation app |
 | yellow, blue | `KEYCODE_PROG_YELLOW`, `…_BLUE` | camera overlay, channels 1 and 2 ([step 7](07-camera-overlay.md)) | new |
+| red | `KEYCODE_PROG_RED` | "Keep cameras ready" on/off, with a small notice top-right ([step 7](07-camera-overlay.md#instant-opening-keep-cameras-ready)) | new |
 
 All codes were read from a 75C755's Bluetooth remote (every one has scan code 240). Read yours with
 `tools/record_keys.py` (below) before relying on them.
 
+**Colour buttons also reach the app in front; TCL's app buttons don't.** The colour buttons send standard media keys,
+so the app on screen receives them too: YouTube shows its title and progress bar for a few seconds when a colour
+button opens a camera. TCL's own buttons (Disney+, Stan, TCL, and any other vendor code above 4000) mean nothing to
+apps, which ignore them: verified with YouTube playing. For a camera button that disturbs nothing, use a vendor
+button. Hiding the key from the app would need key filtering, which breaks held volume (above). We kept the colour
+buttons and accept YouTube's controls.
+
 ## Install and enable
 
 ```powershell
-tools\venv\Scripts\python.exe -I tools\b64push.py ..\tcl-tv-kit\apks\tv-buttons-2.1.apk /data/local/tmp/tvbuttons.apk
+tools\venv\Scripts\python.exe -I tools\b64push.py ..\tcl-tv-kit\apks\tv-buttons-2.2.apk /data/local/tmp/tvbuttons.apk
 tools\venv\Scripts\python.exe -I tools\tv.py "pm install -r /data/local/tmp/tvbuttons.apk; rm -f /data/local/tmp/tvbuttons.apk"
 # let TCL start it at boot (without write-settings the grant is lost at the next restart):
 tools\venv\Scripts\python.exe -I tools\tv.py "cmd appops set local.tvbuttons AUTO_START allow; cmd appops set local.tvbuttons APP_AUTO_START allow; appops write-settings"
@@ -99,6 +107,7 @@ Expect `capabilities=0` and `watching the button log for [...]`. Then **press th
    | `quick_settings` | TCL's quick-settings bar (falls back to TV settings) |
    | `camera:<n>` | camera overlay, recorder channel n (toggles) |
    | `camera:<n>,<n>,…` | camera overlay, steps through channels; closes after the last |
+   | `cameras_ready` | "Keep cameras ready" on/off, with a small notice |
 
 3. **Push it.** TV Buttons picks it up at the next button press, and it **replaces** the built-in list:
 

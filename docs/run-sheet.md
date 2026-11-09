@@ -48,7 +48,8 @@ Tick as you go. Each section ends with a working TV, so you can stop between any
 - [ ] View-only account on the recorder
 - [ ] (Optional) VLC plays `rtsp://<ip>:554/cam/realmonitor?channel=1&subtype=1`
 - [ ] App Library → TV Buttons: address, login (typed by the owner), camera names; Try works for each
-- [ ] Each camera button at Home, over a streaming app, over HDMI; same button closes
+- [ ] Each camera button at Home, over a streaming app, over HDMI; same button closes; switching is instant
+- [ ] "Keep cameras ready" decided (red button or setup screen): on = instant open, ~+6–8% background CPU
 
 ## 8. Wrap-up ([guide](08-maintenance-and-undo.md))
 - [ ] `CHANGES.md` complete with undo commands
